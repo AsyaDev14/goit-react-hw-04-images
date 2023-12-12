@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React, { useState, useEffect } from "react";
 
 import Modal from 'react-modal';
 import './styles.css';
@@ -19,100 +19,93 @@ import { ModalWindow } from "./Modal";
 // Set the root element for the modal
 Modal.setAppElement('#root');
 
-export class App extends Component {
-  state = {
-    picture: '',
-    page: 1,
-    picArray: [],
-    isLoading: false,
-    isOpen: false,
-    largeImage: ''
+export const App = () => {
+  // state = {
+  //   picture: '',
+  //   page: 1,
+  //   picArray: [],
+  //   isLoading: false,
+  //   isOpen: false,
+  //   largeImage: ''
+  // };
+
+  const [picture, setPicture] = useState('')
+  const [page, setPage] = useState(1)
+  const [picArray, setPicArray] = useState([])
+  const [isLoading, setLoading] = useState(false)
+  const [isOpen, setOpen] = useState(false)
+  const [largeImage, setLargeImage] = useState('')
+
+  const modalOpen = (image) => {
+    // this.setState({
+    //   isOpen: true,
+    //   largeImage: image
+    // })
+    setOpen(true);
+    setLargeImage(image);
   };
 
-  modalOpen = (image) => {
-    this.setState({
-      isOpen: true,
-      largeImage: image
-    })
-  }
+  const modalСlose = () => {
+    // this.setState({
+    //   isOpen: false
+    // })
+    setOpen(false)
+  };
 
-  modalСlose = () => {
-    this.setState({
-      isOpen: false
-    })
-  }
 
-  // fixed code 
-  componentDidUpdate (prevProps, prevState) {
-    console.log("componentDidUpdate", prevState, this.state);
-    if (prevState.picture !== this.state.picture || prevState.page !== this.state.page) {
-        fetchPicture(this.state.picture, this.state.page)
-        .then(res => {
-          this.setState({
-            picArray: this.state.page ===1 ? res.hits : [...prevState.picArray, ...res.hits],
-            isLoading: false,
-          });
-        })
-     }
-  }
 
-  formSubmit = (event) => {
+
+  useEffect(() => {
+    if (!picture) return;
+    fetchPicture(picture, page)
+      .then(res => {
+        console.log("res", res)
+        if (page === 1) {
+          setPicArray(res)
+        } else {
+          setPicArray(prev => ([...prev, ...res]))
+        }
+        setLoading(false)
+      })
+
+  }, [picture, page])
+
+
+  const formSubmit = (event) => {
     event.preventDefault();
     const value = event.target.elements[1].value;
-    this.setState({
-      picture: value,
-      isLoading: true,
-      page: 1,
-      picArray : [],
-    });
-
-    // setTimeout(() => {
-      // fetchPicture(value, this.state.page)
-      //   .then(res => {
-      //     this.setState({
-      //       picArray: res.hits,
-      //       isLoading: false,
-      //     });
-      //   })
-    // }, 1000);
+    if (picture !== value) {   
+      setPicture(value);
+      setLoading(true);
+      setPage(1);
+    }
+    // setPicArray([]);
   };
 
-  handleClick = () => {
-    this.setState(prev => ({
-      // picArray: [...prev.picArray, ...res.hits],
-      page: prev.page + 1,
-    }));
+  const handleClick = () => {
+    setPage(prev => prev + 1);
+  };
 
-    // fetchPicture(this.state.picture, this.state.page + 1)
-    //   .then(res => {
-    //     this.setState(prev => ({
-    //       picArray: [...prev.picArray, ...res.hits],
-    //       page: prev.page + 1,
-    //     }));
-    //   });
-  }
-
-  render() {
-    return (
-      <>
-        <Searchbar onSubmit={this.formSubmit} />
-        <ImageGallery
-          picArray={this.state.picArray}
-          modalOpen={this.modalOpen}
-        />
-        {
-          Boolean(this.state.picArray.length) && (
-            <Button handleClick={this.handleClick} />
-          )
-        }
-        <Loader isLoading={this.state.isLoading} />
-        <ModalWindow
-          isOpen={this.state.isOpen}
-          closeModal={this.modalСlose}
-          largeImage={this.state.largeImage}
-        />
-      </>
-    )
-  }
+ 
+  return (
+    <>
+      <Searchbar onSubmit={formSubmit} />
+      <ImageGallery
+        picArray={picArray}
+        modalOpen={modalOpen}
+      />
+      {
+        Boolean(picArray.length) && (
+          <Button handleClick={handleClick} />
+        )
+      }
+      <Loader isLoading={isLoading} />
+      <ModalWindow
+        isOpen={isOpen}
+        closeModal={modalСlose}
+        largeImage={largeImage}
+      />
+    </>
+  )
 };
 
